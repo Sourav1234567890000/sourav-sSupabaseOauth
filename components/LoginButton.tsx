@@ -25,12 +25,11 @@ export default function LoginPage() {
   }, [])
 
   const loginWithGoogle = async () => {
+    // Use environment variable for redirect URL
     const redirectUrl = process.env.NEXT_PUBLIC_REDIRECT_URL
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: redirectUrl
-      }
+      options: { redirectTo: redirectUrl }
     })
     if (error) console.log("OAuth Error:", error.message)
   }
