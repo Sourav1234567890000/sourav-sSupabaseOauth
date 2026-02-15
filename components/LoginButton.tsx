@@ -6,19 +6,18 @@ import { supabase } from "@/lib/supabaseClient";
 export default function LoginPage() {
   const [user, setUser] = useState<any>(null);
 
+  // Fetch session on mount & listen for auth changes
   useEffect(() => {
-    // Fetch current session on mount
     const fetchSession = async () => {
       const { data } = await supabase.auth.getSession();
       setUser(data?.session?.user || null);
     };
     fetchSession();
 
-    // Listen for auth state changes (login/logout)
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user || null);
-      },
+      }
     );
 
     return () => {
@@ -26,24 +25,34 @@ export default function LoginPage() {
     };
   }, []);
 
-  const loginWithGoogle = async () => {
-    const redirectUrl = process.env.NEXT_PUBLIC_REDIRECT_URL;
-    if (!redirectUrl) {
-      console.error("NEXT_PUBLIC_REDIRECT_URL is not set!");
-      return;
+  // Determine redirect URL dynamically
+  const getRedirectUrl = () => {
+    // Use Vercel URL in production, fallback to localhost in dev
+    if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+      return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
     }
+    if (process.env.NEXT_PUBLIC_REDIRECT_URL) {
+      return process.env.NEXT_PUBLIC_REDIRECT_URL;
+    }
+    console.error("No redirect URL configured!");
+    return undefined;
+  };
+
+  const loginWithGoogle = async () => {
+    const redirectUrl = getRedirectUrl();
+    if (!redirectUrl) return;
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: redirectUrl },
     });
 
-    if (error) console.log("OAuth Error:", error.message);
+    if (error) console.error("OAuth Error:", error.message);
   };
 
   const logout = async () => {
     const { error } = await supabase.auth.signOut();
-    if (error) console.log("Logout error:", error.message);
+    if (error) console.error("Logout error:", error.message);
     setUser(null);
   };
 
