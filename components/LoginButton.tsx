@@ -25,10 +25,11 @@ export default function LoginPage() {
   }, [])
 
   const loginWithGoogle = async () => {
+    const redirectUrl = process.env.NEXT_PUBLIC_REDIRECT_URL
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "http://localhost:3000" // change this to production URL when deploying
+        redirectTo: redirectUrl
       }
     })
     if (error) console.log("OAuth Error:", error.message)
