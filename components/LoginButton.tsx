@@ -2,18 +2,29 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [user, setUser] = useState<any>(null);
+  const router = useRouter();
 
-  // Fetch session on mount & listen for auth changes
+  // Determine redirect URL based on environment
+  const getRedirectUrl = () => {
+    return process.env.NODE_ENV === "production"
+      ? "https://sourav-s-supabase-oauth.vercel.app"
+      : "http://localhost:3000";
+  };
+
+  // Fetch session on mount
   useEffect(() => {
     const fetchSession = async () => {
       const { data } = await supabase.auth.getSession();
       setUser(data?.session?.user || null);
     };
+
     fetchSession();
 
+    // Listen for auth state changes
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user || null);
@@ -25,35 +36,31 @@ export default function LoginPage() {
     };
   }, []);
 
-  // Determine redirect URL dynamically
-  const getRedirectUrl = () => {
-    // Use Vercel URL in production, fallback to localhost in dev
-    if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-      return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
-    }
-    if (process.env.NEXT_PUBLIC_REDIRECT_URL) {
-      return process.env.NEXT_PUBLIC_REDIRECT_URL;
-    }
-    console.error("No redirect URL configured!");
-    return undefined;
-  };
-
+  // Login function
   const loginWithGoogle = async () => {
-    const redirectUrl = getRedirectUrl();
-    if (!redirectUrl) return;
+    const redirectTo = getRedirectUrl();
 
+    // Supabase OAuth
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: redirectUrl },
+      options: { redirectTo },
     });
 
-    if (error) console.error("OAuth Error:", error.message);
+    if (error) {
+      console.error("OAuth Error:", error.message);
+      return;
+    }
+
+    // After login, Supabase will redirect here
   };
 
+  // Logout function
   const logout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) console.error("Logout error:", error.message);
     setUser(null);
+    // Optional: redirect to home page
+    router.push("/");
   };
 
   return (
