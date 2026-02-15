@@ -29,7 +29,7 @@ export default function LoginPage() {
   const loginWithGoogle = async () => {
     const redirectUrl = process.env.NEXT_PUBLIC_REDIRECT_URL;
     if (!redirectUrl) {
-      console.error("Redirect URL is not set!");
+      console.error("NEXT_PUBLIC_REDIRECT_URL is not set!");
       return;
     }
 
@@ -37,6 +37,7 @@ export default function LoginPage() {
       provider: "google",
       options: { redirectTo: redirectUrl },
     });
+
     if (error) console.log("OAuth Error:", error.message);
   };
 
